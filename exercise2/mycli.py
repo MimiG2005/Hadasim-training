@@ -4,22 +4,33 @@ import typer
 
 app = typer.Typer()
 FILE_NAME = "data.txt"
-
-def add_person_to_file(obj: dict):
-    all_data = json.load(open(FILE_NAME)) if os.path.exists(FILE_NAME) else []
-    all_data.append(obj)
-    with open(FILE_NAME, "w") as f:
-        json.dump(all_data, f, indent=4)
-    print("Person added successfully!")
-
 @app.command()
-def add_obj(person: str):
+def add_obj(data: str):
     """
     Add a JSON object with name, age, and city to the local file.
     Example: '{"name":"Lea","age":25,"city":"Tel Aviv"}'
     """
-    person_obj = json.loads(person)
-    add_person_to_file(person_obj)
+    try:
+        parsed  = json.loads(data)
+    except json.JSONDecodeError:
+        typer.echo("Invalid JSON")
+        raise typer.Exit(code=1)
+    with open(FILE_NAME, "a", encoding="utf-8") as file:
+        file.write(json.dumps(parsed) + "\n")
+    typer.echo("Person added successfully!")
+
+@app.command()
+def get_last_ten():
+    if not os.path.exists(FILE_NAME):
+        typer.echo("File does not exist")
+        raise typer.Exit(1)
+
+    with open(FILE_NAME, encoding="utf-8") as f:
+        for line in f.readlines()[-10:]:
+            try:
+                typer.echo(json.loads(line))
+            except json.JSONDecodeError:
+                typer.echo("Invalid JSON line")
 
 if __name__ == "__main__":
     app()
